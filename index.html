@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>博士倫 UOD 分鏡審閱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* graphite ramp, tinted slightly toward the brand navy */
+    --bg: #f6f7f8;
+    --surface: #ffffff;
+    --surface-2: #eef0f3;
+    --line: rgba(20, 28, 40, 0.08);
+    --line-strong: rgba(20, 28, 40, 0.16);
+    --text: #17202b;
+    --text-2: #4b5563;
+    --text-3: #7b8491;
+    --accent: #0b2a5b;          /* Bausch + Lomb navy, used rarely */
+    --pass: #2f7a55;
+    /* Cr.ED spec chart colours, used only inside the mask */
+    --zone-crop: rgba(78, 203, 203, 0.42);
+    --zone-line: #ff7f66;
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --sans: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    --serif: "Noto Serif TC", "PMingLiU", serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 15px/1.6 var(--sans); }
+  img { display: block; max-width: 100%; height: auto; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 0 32px; }
+
+  /* header */
+  header.top { border-bottom: 1px solid var(--line); background: var(--surface); }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand b { font: 600 15px/1 var(--sans); letter-spacing: 0.02em; color: var(--accent); }
+  .brand span { color: var(--text-3); font-size: 13px; }
+  .meta { font: 400 12px/1 var(--mono); color: var(--text-3); }
+
+  /* intro */
+  .intro { padding: 56px 0 40px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 48px; align-items: end; }
+  .intro h1 { font: 600 44px/1.2 var(--serif); margin: 0 0 16px; letter-spacing: 0.01em; }
+  .intro p { margin: 0; color: var(--text-2); max-width: 56ch; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .facts div { padding: 16px 20px; }
+  .facts div + div { border-left: 1px solid var(--line); }
+  .facts dt { font-size: 12px; color: var(--text-3); margin-bottom: 4px; }
+  .facts dd { margin: 0; font: 500 17px/1.3 var(--sans); font-variant-numeric: tabular-nums; }
+
+  /* spec + check */
+  .spec { display: grid; grid-template-columns: 200px minmax(0, 1fr) minmax(0, 1fr); gap: 32px; padding: 32px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); align-items: center; }
+  .spec img { border-radius: 8px; border: 1px solid var(--line); }
+  .spec h2, .section-head h2 { font: 600 20px/1.3 var(--sans); margin: 0 0 12px; }
+  .spec ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; color: var(--text-2); }
+  .spec li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; }
+  .key { width: 16px; height: 16px; border-radius: 4px; margin-top: 4px; }
+  .key.crop { background: var(--zone-crop); }
+  .key.safe { background: #f8e3dd; border: 1px solid var(--zone-line); }
+  .key.btn { border: 2px solid var(--zone-line); border-radius: 50%; }
+  .verdict { border-left: 1px solid var(--line); padding-left: 32px; }
+  .verdict .big { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .verdict .big strong { font: 500 40px/1 var(--sans); font-variant-numeric: tabular-nums; }
+  .verdict .big span { color: var(--pass); font-weight: 500; }
+  .verdict p { margin: 0 0 20px; color: var(--text-2); }
+
+  .toggle { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; font-weight: 500; }
+  .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch { width: 40px; height: 24px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line-strong); position: relative; transition: background-color 160ms var(--ease); }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 160ms var(--ease); }
+  .toggle input:checked + .switch { background: var(--accent); border-color: var(--accent); }
+  .toggle input:checked + .switch::after { transform: translateX(16px); }
+  .toggle input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* frames */
+  .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; padding: 56px 0 20px; }
+  .section-head p { margin: 0; color: var(--text-3); font-size: 13px; }
+  .frames { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+  .frame { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; }
+  .shot { position: relative; aspect-ratio: 640 / 1386; border-radius: 8px; overflow: hidden; background: var(--surface-2); cursor: zoom-in; border: 0; padding: 0; width: 100%; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; }
+  .shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* the Motion 全屏 mask, positioned in spec pixels (640 x 1386) */
+  .mask { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 200ms var(--ease); }
+  body.show-mask .mask { opacity: 1; }
+  .mask .crop { position: absolute; left: 0; right: 0; top: 0; height: calc(314 / 1386 * 100%); background: var(--zone-crop); }
+  .mask .line { position: absolute; left: 0; right: 0; top: calc(314 / 1386 * 100%); border-top: 2px solid var(--zone-line); }
+  .mask .tag { position: absolute; right: 6px; font: 500 10px/1 var(--mono); color: #fff; padding: 3px 5px; border-radius: 4px; }
+  .mask .tag.t1 { top: calc(157 / 1386 * 100%); transform: translateY(-50%); background: #3fb8b8; }
+  .mask .tag.t2 { top: calc(314 / 1386 * 100% + 6px); background: var(--zone-line); }
+  .mask .close { position: absolute; left: calc(14 / 640 * 100%); top: calc(1266 / 1386 * 100%); width: calc(50 / 640 * 100%); aspect-ratio: 1; border: 2px solid var(--zone-line); border-radius: 50%; background: rgba(255,127,102,0.25); }
+  .mask .home { position: absolute; left: calc(206 / 640 * 100%); width: calc(228 / 640 * 100%); top: calc(1360 / 1386 * 100%); height: calc(8 / 1386 * 100%); border-radius: 4px; background: rgba(255,255,255,0.8); box-shadow: 0 0 0 1px var(--zone-line); }
+
+  .info { padding: 16px 4px 4px; display: grid; gap: 8px; flex: 1; }
+  .info .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .info .sc { font: 600 15px/1.3 var(--sans); }
+  .info .tc { font: 400 12px/1 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .info .desc { margin: 0; color: var(--text-2); font-size: 14px; }
+  .info .copy { margin: 0; font-size: 13px; color: var(--text); }
+  .info .copy em { font-style: normal; color: var(--text-3); margin-right: 6px; }
+  .check { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 8px; font: 400 12px/1.4 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .check .dot { width: 8px; height: 8px; border-radius: 4px; background: var(--pass); flex: none; }
+  .check b { color: var(--pass); font-weight: 500; font-family: var(--sans); }
+
+  /* assets */
+  .assets { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  .card h3 { font: 600 15px/1.3 var(--sans); margin: 0 0 4px; }
+  .card p { margin: 0 0 16px; color: var(--text-3); font-size: 13px; }
+  .card img { border-radius: 8px; }
+  .scenes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .scenes figure { margin: 0; }
+  .scenes figcaption { font-size: 12px; color: var(--text-3); margin-top: 8px; }
+  .product { background: linear-gradient(#0e3a7a, #0b2a5b); padding: 16px; border-radius: 8px; }
+
+  /* notes */
+  .notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding-bottom: 80px; }
+  .notes ol, .notes ul { margin: 0; padding-left: 20px; color: var(--text-2); display: grid; gap: 8px; font-size: 14px; }
+  footer { border-top: 1px solid var(--line); padding: 24px 0 40px; color: var(--text-3); font-size: 12px; }
+
+  /* lightbox */
+  dialog { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; }
+  dialog::backdrop { background: rgba(12, 16, 22, 0.86); }
+  .lb { position: relative; height: min(92vh, 1386px); aspect-ratio: 640 / 1386; border-radius: 12px; overflow: hidden; }
+  .lb img { width: 100%; height: 100%; object-fit: cover; }
+  .lb-close { position: fixed; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); color: #fff; font-size: 20px; cursor: pointer; }
+  .lb-close:hover { background: rgba(255,255,255,0.16); }
+  .lb-cap { position: fixed; left: 0; right: 0; bottom: 16px; text-align: center; color: rgba(255,255,255,0.8); font: 400 13px/1.4 var(--sans); }
+
+  @media (max-width: 1100px) {
+    .frames { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .spec { grid-template-columns: 160px minmax(0, 1fr); }
+    .verdict { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); padding: 24px 0 0; }
+    .intro { grid-template-columns: 1fr; gap: 32px; }
+    .assets, .notes { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    .intro { padding: 32px 0 24px; }
+    .intro h1 { font-size: 30px; }
+    .facts { grid-template-columns: 1fr; }
+    .facts div + div { border-left: 0; border-top: 1px solid var(--line); }
+    .spec { grid-template-columns: 1fr; padding: 20px; }
+    .spec img { max-width: 160px; }
+    .frames { gap: 12px; }
+    .frame { padding: 8px; border-radius: 12px; }
+    .info .desc, .info .copy { font-size: 12px; }
+    .scenes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .section-head { flex-direction: column; align-items: start; padding-top: 40px; }
+    header.top .meta { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body class="show-mask">
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><b>BAUSCH+LOMB 博士倫</b><span>UOD 老花隱形眼鏡｜AIC 特製版</span></div>
+    <div class="meta">分鏡 v5 · 2026-11-25</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="intro">
+    <div>
+      <h1>手臂不夠長</h1>
+      <p>老花最大的痛點不是看不清楚，而是把菜單、手機拉遠的那一瞬間，別人就知道你老了。前段三個越拉越遠的日常場景，接三區漸進鏡片，最後落在母女同框的 End Cut。</p>
+    </div>
+    <dl class="facts">
+      <div><dt>版位</dt><dd>Cr.ED Motion 全屏</dd></div>
+      <div><dt>尺寸</dt><dd>640 × 1386</dd></div>
+      <div><dt>長度</dt><dd>約 19 秒・8 格</dd></div>
+    </dl>
+  </section>
+
+  <section class="spec" aria-labelledby="spec-h">
+    <img src="img/spec_motion_full.png" alt="Cr.ED Motion 全屏安全範圍規格圖：上方 314px 為可能裁切區，下方 640×1072 為安全區" width="200" height="433">
+    <div>
+      <h2 id="spec-h">Motion 全屏的安全範圍</h2>
+      <ul>
+        <li><i class="key crop"></i><span>上方 314px 依手機尺寸可能被裁切，只放延伸的背景</span></li>
+        <li><i class="key safe"></i><span>下方 640 × 1072 是安全範圍，logo、文案、法規、按鈕都放在這裡</span></li>
+        <li><i class="key btn"></i><span>左下角是平台的關閉按鈕，底部中央是手機的 Home 橫條，兩處都不放資訊</span></li>
+      </ul>
+    </div>
+    <div class="verdict">
+      <div class="big"><strong>8 / 8</strong><span>格符合規範</span></div>
+      <p>每格的文字最高點都在 y 314 以下，最低點都在關閉按鈕（y 1250）之上。開關遮罩可以對照每一格。</p>
+      <label class="toggle">
+        <input type="checkbox" id="maskToggle" checked>
+        <span class="switch" aria-hidden="true"></span>
+        顯示安全範圍遮罩
+      </label>
+    </div>
+  </section>
+
+  <div class="section-head">
+    <h2>分鏡</h2>
+    <p>點擊畫面放大檢視・座標為規格 px（640 × 1386）</p>
+  </div>
+
+  <section class="frames" id="frames"></section>
+
+  <div class="section-head">
+    <h2>角色、場景與產品</h2>
+    <p>Nano Banana Pro 定裝；產品與標準字取自官網，不由 AI 生成</p>
+  </div>
+  <section class="assets">
+    <div class="card">
+      <h3>角色定裝</h3>
+      <p>主角 48 歲、女兒 14 歲，各四個角度，全片同一套服裝</p>
+      <img src="img/turnaround.jpg" alt="主角與女兒的正面、45 度、全側、背向定裝" width="1300" height="1056">
+    </div>
+    <div style="display:grid;gap:24px;align-content:start">
+      <div class="card">
+        <h3>場景光位</h3>
+        <p>三個場景各一張空景，固定主光方向</p>
+        <div class="scenes">
+          <figure><img src="img/scene_restaurant.jpg" alt="餐廳空景" width="480" height="860"><figcaption>餐廳・夜晚暖光</figcaption></figure>
+          <figure><img src="img/scene_train.jpg" alt="台北捷運車廂空景" width="480" height="860"><figcaption>台北捷運・早晨</figcaption></figure>
+          <figure><img src="img/scene_living.jpg" alt="客廳與走廊空景" width="480" height="860"><figcaption>客廳與走廊・午後</figcaption></figure>
+        </div>
+      </div>
+      <div class="card">
+        <h3>產品</h3>
+        <p>官網去背圖，正式定版需向客戶索取原始檔</p>
+        <div class="product"><img src="img/product.png" alt="博士倫 ULTRA one day 與老花專用包裝" width="900" height="396"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-head"><h2>製作備註</h2></div>
+  <section class="notes">
+    <div class="card">
+      <h3>畫面怎麼做出來的</h3>
+      <ol>
+        <li>人物與場景用 Nano Banana Pro 生成，以 9:16 構圖</li>
+        <li>上方不足的高度交給 GPT Image 2.6 往上補畫，再把原圖貼回下半部，人臉與構圖不變</li>
+        <li>S4a 鏡片取自官網「三重科技加乘」，外圍由 GPT 補上同款科技線條</li>
+        <li>所有字卡、主標、法規與定版在後期用 GSAP 與 HyperFrames 合成</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>待確認</h3>
+      <ul>
+        <li>旁白與字卡字句送審版本，廣告核准字號待取得</li>
+        <li>產品包裝原始檔（PSD 或高解析 PNG）</li>
+        <li>S2、S3a 補畫接縫的天花板軌道有輕微重影，位於可能裁切區</li>
+        <li>全屏圖單張需小於 150KB，交件時另行壓縮</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer><div class="wrap">TNL Mediagene・Ad2iction 內部審閱用，請勿外流</div></footer>
+
+<dialog id="lb" aria-label="分鏡放大">
+  <button class="lb-close" type="button" aria-label="關閉">×</button>
+  <div class="lb"><img alt=""><div class="mask" aria-hidden="true"><div class="crop"></div><div class="line"></div><span class="tag t1">314</span><span class="tag t2">1072</span><div class="close"></div><div class="home"></div></div></div>
+  <div class="lb-cap"></div>
+</dialog>
+
+<script>
+  // text extents in spec px (640 x 1386), measured from tools/compose.py
+  const FRAMES = [
+    { id: "S1_menu",     sc: "S1",  tc: "0.0–3.0",   desc: "餐廳：菜單伸到手臂最遠、瞇眼", copy: [["字卡", "看菜單"], ["音效", "咻"]], top: 356, bottom: 474 },
+    { id: "S2_phone",    sc: "S2",  tc: "3.0–6.0",   desc: "台北捷運：手機往前伸到最遠，身體後仰，旁人側目", copy: [["字卡", "看手機"], ["音效", "咻——"]], top: 356, bottom: 474 },
+    { id: "S3a_report",  sc: "S3a", tc: "6.0–8.0",   desc: "客廳：女兒遞成績單，媽媽擺手叫她退後", copy: [["字卡", "看成績單"], ["台詞", "遠一點……再遠一點。"]], top: 356, bottom: 474 },
+    { id: "S3b_hallway", sc: "S3b", tc: "8.0–10.0",  desc: "女兒一路退到走廊盡頭，高舉成績單", copy: [["主標", "手臂，快不夠長了。"]], top: 1008, bottom: 1212 },
+    { id: "S4a_lens",    sc: "S4a", tc: "10.0–11.0", desc: "三區漸進鏡片轉場", copy: [["主標", "三區漸進設計"], ["副標", "遠・中・近 順暢轉換"]], top: 356, bottom: 512 },
+    { id: "S4b_eye",     sc: "S4b", tc: "11.0–12.0", desc: "眨眼，眼神清亮", copy: [["主標", "自在新視野"], ["副標", "保有隱形眼鏡帶來的自由"]], top: 1085, bottom: 1224 },
+    { id: "S5_close",    sc: "S5",  tc: "12.0–15.0", desc: "成績單直接拿到眼前看清楚，女兒愣住", copy: [["主標", "遠中近都清晰"], ["台詞", "媽，妳不用拉遠了喔？"]], top: 1073, bottom: 1210 },
+    { id: "S6_endcut",   sc: "S6",  tc: "15.0–19.0", desc: "End Cut：母女同框、產品、賣點與法規", copy: [["主標", "打破乾澀 超越舒適"], ["旁白", "博士倫奧澈多焦點日拋，看遠看近，一副就清楚。"]], top: 575, bottom: 1225 },
+  ];
+  const SAFE_TOP = 314, CLOSE_TOP = 1250;
+  const maskHTML = '<div class="mask" aria-hidden="true"><div class="crop"></div><div class="line"></div><span class="tag t1">314</span><span class="tag t2">1072</span><div class="close"></div><div class="home"></div></div>';
+
+  const grid = document.getElementById("frames");
+  FRAMES.forEach((f, i) => {
+    const ok = f.top >= SAFE_TOP && f.bottom < CLOSE_TOP;
+    const el = document.createElement("article");
+    el.className = "frame";
+    el.innerHTML = `
+      <button class="shot" type="button" data-i="${i}" aria-label="放大 ${f.sc}">
+        <img src="img/${f.id}.jpg" alt="${f.sc} ${f.desc}" width="720" height="1559" loading="${i < 4 ? "eager" : "lazy"}">
+        ${maskHTML}
+      </button>
+      <div class="info">
+        <div class="row1"><span class="sc">${f.sc}</span><span class="tc">${f.tc}s</span></div>
+        <p class="desc">${f.desc}</p>
+        ${f.copy.map(([k, v]) => `<p class="copy"><em>${k}</em>${v}</p>`).join("")}
+        <div class="check"><i class="dot"></i><b>${ok ? "符合" : "需調整"}</b><span>文字 y ${f.top}–${f.bottom}</span></div>
+      </div>`;
+    grid.appendChild(el);
+  });
+
+  const toggle = document.getElementById("maskToggle");
+  toggle.addEventListener("change", () => document.body.classList.toggle("show-mask", toggle.checked));
+
+  const lb = document.getElementById("lb");
+  const lbImg = lb.querySelector(".lb img");
+  const lbCap = lb.querySelector(".lb-cap");
+  let cur = 0;
+  const show = (i) => {
+    cur = (i + FRAMES.length) % FRAMES.length;
+    const f = FRAMES[cur];
+    lbImg.src = `img/${f.id}.jpg`;
+    lbImg.alt = `${f.sc} ${f.desc}`;
+    lbCap.textContent = `${f.sc}・${f.tc}s・${f.desc}　（← → 切換，Esc 關閉）`;
+  };
+  grid.addEventListener("click", (e) => {
+    const b = e.target.closest(".shot");
+    if (!b) return;
+    show(+b.dataset.i);
+    lb.showModal();
+  });
+  lb.querySelector(".lb-close").addEventListener("click", () => lb.close());
+  lb.addEventListener("click", (e) => { if (e.target === lb) lb.close(); });
+  document.addEventListener("keydown", (e) => {
+    if (!lb.open) return;
+    if (e.key === "ArrowRight") show(cur + 1);
+    if (e.key === "ArrowLeft") show(cur - 1);
+  });
+</script>
+</body>
+</html>
