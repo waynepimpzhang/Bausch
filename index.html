@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="utf-8">
@@ -154,6 +154,36 @@
     .section-head { flex-direction: column; align-items: start; padding-top: 40px; }
     header.top .meta { display: none; }
   }
+
+  /* hero: animatic player + timeline */
+  .hero { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 56px; padding: 40px 0 48px; align-items: start; }
+  .player { position: sticky; top: 24px; }
+  .screen { position: relative; aspect-ratio: 640 / 1386; border-radius: 16px; overflow: hidden; background: #0d1520; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(16,24,40,0.10); }
+  .screen video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .controls { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .btn { height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font: 500 14px/1 var(--sans); cursor: pointer; transition: background-color 160ms var(--ease); }
+  .btn:hover { background: #12397a; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .time { font: 400 12px/1 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .hero-text { padding-top: 8px; }
+  .kicker { margin: 0 0 8px; color: var(--text-3); font-size: 13px; }
+  .hero h1 { font: 600 44px/1.2 var(--serif); margin: 0 0 16px; letter-spacing: 0.01em; }
+  .lede { margin: 0 0 24px; color: var(--text-2); max-width: 56ch; }
+  .hero .facts { margin: 0 0 24px; }
+  .timeline { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+  .timeline li + li { border-top: 1px solid var(--line); }
+  .timeline button { width: 100%; display: grid; grid-template-columns: 48px 96px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 12px 16px; border: 0; background: transparent; text-align: left; cursor: pointer; font: 400 14px/1.4 var(--sans); color: var(--text-2); transition: background-color 160ms var(--ease); }
+  .timeline button:hover { background: var(--surface-2); }
+  .timeline button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .timeline .sc { font-weight: 600; color: var(--text); }
+  .timeline .tc { font: 400 12px/1 var(--mono); color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .timeline li.now button { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); color: var(--text); }
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; gap: 32px; }
+    .player { position: static; max-width: 320px; margin: 0 auto; width: 100%; }
+    .hero h1 { font-size: 32px; }
+  }
+  @media (max-width: 640px) { .timeline button { grid-template-columns: 40px 84px minmax(0, 1fr); font-size: 13px; } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -168,16 +198,28 @@
 
 <main class="wrap">
 
-  <section class="intro">
-    <div>
-      <h1>手臂不夠長</h1>
-      <p>老花最大的痛點不是看不清楚，而是把菜單、手機拉遠的那一瞬間，別人就知道你老了。前段三個越拉越遠的日常場景，接三區漸進鏡片，最後落在母女同框的 End Cut。</p>
+  <section class="hero">
+    <div class="player">
+      <div class="screen">
+        <video id="anim" src="video/animatic.mp4" poster="img/S1_menu.jpg" playsinline muted loop preload="metadata"></video>
+        <div class="mask" aria-hidden="true"><div class="crop"></div><div class="line"></div><span class="tag t1">314</span><span class="tag t2">1072</span><div class="close"></div><div class="home"></div></div>
+      </div>
+      <div class="controls">
+        <button type="button" id="playBtn" class="btn">播放</button>
+        <span class="time" id="timeNow">0.0 / 19.0s</span>
+      </div>
     </div>
-    <dl class="facts">
-      <div><dt>版位</dt><dd>Cr.ED Motion 全屏</dd></div>
-      <div><dt>尺寸</dt><dd>640 × 1386</dd></div>
-      <div><dt>長度</dt><dd>約 19 秒・8 格</dd></div>
-    </dl>
+    <div class="hero-text">
+      <p class="kicker">動態分鏡・無聲預覽</p>
+      <h1>手臂不夠長</h1>
+      <p class="lede">老花最大的痛點不是看不清楚，而是把菜單、手機拉遠的那一瞬間，別人就知道你老了。前段三個越拉越遠的日常場景，接三區漸進鏡片，最後落在母女同框的 End Cut。</p>
+      <dl class="facts">
+        <div><dt>版位</dt><dd>Cr.ED Motion 全屏</dd></div>
+        <div><dt>尺寸</dt><dd>640 × 1386</dd></div>
+        <div><dt>長度</dt><dd>約 19 秒・8 格</dd></div>
+      </dl>
+      <ol class="timeline" id="timeline"></ol>
+    </div>
   </section>
 
   <section class="spec" aria-labelledby="spec-h">
@@ -329,6 +371,31 @@
     if (e.key === "ArrowRight") show(cur + 1);
     if (e.key === "ArrowLeft") show(cur - 1);
   });
+
+  // animatic: play button, time readout, timeline sync
+  const v = document.getElementById("anim");
+  const playBtn = document.getElementById("playBtn");
+  const timeNow = document.getElementById("timeNow");
+  const tl = document.getElementById("timeline");
+  const starts = FRAMES.map(f => parseFloat(f.tc));
+  FRAMES.forEach((f, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<button type="button"><span class="sc">${f.sc}</span><span class="tc">${f.tc}s</span><span>${f.desc}</span></button>`;
+    li.querySelector("button").addEventListener("click", () => { v.currentTime = starts[i] + 0.05; v.play(); });
+    tl.appendChild(li);
+  });
+  const items = [...tl.children];
+  const sync = () => {
+    const t = v.currentTime;
+    timeNow.textContent = `${t.toFixed(1)} / ${(v.duration || 19).toFixed(1)}s`;
+    let k = 0; starts.forEach((s, i) => { if (t >= s) k = i; });
+    items.forEach((li, i) => li.classList.toggle("now", i === k));
+  };
+  v.addEventListener("timeupdate", sync);
+  v.addEventListener("play", () => playBtn.textContent = "暫停");
+  v.addEventListener("pause", () => playBtn.textContent = "播放");
+  playBtn.addEventListener("click", () => v.paused ? v.play() : v.pause());
+  sync();
 </script>
 </body>
 </html>
